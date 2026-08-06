@@ -1,6 +1,12 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { BarChart, Bar, LineChart, Line, ResponsiveContainer } from 'recharts';
+
+const ChartContainer = dynamic(
+  () => Promise.resolve(({ children }: { children: React.ReactNode }) => <>{children}</>),
+  { ssr: false }
+);
 
 interface Report {
   id: string;
@@ -65,11 +71,15 @@ export function StatsSection({ reports }: { reports: Report[] }) {
           </p>
         )}
         {runwayChartData.length > 0 && (
-          <ResponsiveContainer width="100%" height={60}>
-            <LineChart data={runwayChartData}>
-              <Line type="monotone" dataKey="value" stroke="hsl(240, 5.9%, 10%)" strokeWidth={2} dot={true} />
-            </LineChart>
-          </ResponsiveContainer>
+          <ChartContainer>
+            <div style={{ width: '100%', height: 60 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={runwayChartData}>
+                  <Line type="monotone" dataKey="value" stroke="hsl(240, 5.9%, 10%)" strokeWidth={2} dot={true} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartContainer>
         )}
       </div>
 
@@ -84,11 +94,15 @@ export function StatsSection({ reports }: { reports: Report[] }) {
           </p>
         )}
         {spendChartData.length > 0 && (
-          <ResponsiveContainer width="100%" height={60}>
-            <BarChart data={spendChartData}>
-              <Bar dataKey="value" fill="hsl(240, 5.9%, 10%)" radius={[2, 2, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <ChartContainer>
+            <div style={{ width: '100%', height: 60 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={spendChartData}>
+                  <Bar dataKey="value" fill="hsl(240, 5.9%, 10%)" radius={[2, 2, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartContainer>
         )}
       </div>
 
@@ -103,11 +117,15 @@ export function StatsSection({ reports }: { reports: Report[] }) {
           </p>
         )}
         {incomeChartData.length > 0 && (
-          <ResponsiveContainer width="100%" height={60}>
-            <BarChart data={incomeChartData}>
-              <Bar dataKey="value" fill="hsl(240, 5.9%, 10%)" radius={[2, 2, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <ChartContainer>
+            <div style={{ width: '100%', height: 60 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={incomeChartData}>
+                  <Bar dataKey="value" fill="hsl(240, 5.9%, 10%)" radius={[2, 2, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartContainer>
         )}
       </div>
     </div>

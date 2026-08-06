@@ -9,8 +9,8 @@ A bank account connected via an open banking provider. Has a balance, type, and 
 _Avoid_: Wallet, bank
 
 **Transaction**:
-An individual debit or credit on a single account.
-_Avoid_: Payment, transfer (as a noun for the record itself)
+An individual spend or credit on a single account. Positive amount = money leaving the account (expense); negative amount = money entering (income). This follows Plaid's sign convention.
+_Avoid_: Payment, transfer
 
 **Report**:
 A precomputed financial metric for a given period. Types: runway, monthly spend, monthly income.

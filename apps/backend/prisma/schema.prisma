@@ -94,5 +94,6 @@ model Report {
 
   user User @relation(fields: [userId], references: [id])
 
+  @@unique([userId, reportType, period])
   @@map("report")
 }

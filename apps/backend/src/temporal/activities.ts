@@ -149,135 +149,91 @@ export async function syncUserTransactions(userId: string): Promise<void> {
 }
 
 export async function generateUserReports(userId: string): Promise<void> {
-  const now = new Date();
-  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-
-  // Get all accounts for the user
   const accounts = await prisma.account.findMany({ where: { userId } });
   const totalBalance = accounts.reduce((sum, acc) => sum + (acc.currentBalance || 0), 0);
-
-  // Calculate monthly spend (positive amounts in Plaid = money out)
-  const currentMonthTransactions = await prisma.transaction.findMany({
-    where: {
-      account: { userId },
-      date: { gte: currentMonth, lt: new Date(now.getFullYear(), now.getMonth() + 1, 1) },
-      pending: false,
-    },
-  });
-
-  const lastMonthTransactions = await prisma.transaction.findMany({
-    where: {
-      account: { userId },
-      date: { gte: lastMonth, lte: lastMonthEnd },
-      pending: false,
-    },
-  });
-
-  // In Plaid, positive amounts = money leaving the account (debits)
-  // Negative amounts = money entering the account (credits)
-  const currentMonthSpend = currentMonthTransactions
-    .filter((tx) => tx.amount > 0)
-    .reduce((sum, tx) => sum + tx.amount, 0);
-
-  const lastMonthSpend = lastMonthTransactions
-    .filter((tx) => tx.amount > 0)
-    .reduce((sum, tx) => sum + tx.amount, 0);
-
-  const currentMonthIncome = currentMonthTransactions
-    .filter((tx) => tx.amount < 0)
-    .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
-
-  const lastMonthIncome = lastMonthTransactions
-    .filter((tx) => tx.amount < 0)
-    .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
-
-  const spendChangePercentage = lastMonthSpend > 0
-    ? ((currentMonthSpend - lastMonthSpend) / lastMonthSpend) * 100
-    : 0;
-
-  const incomeChangePercentage = lastMonthIncome > 0
-    ? ((currentMonthIncome - lastMonthIncome) / lastMonthIncome) * 100
-    : 0;
-
-  // Calculate runway: total balance / average monthly net burn
-  const avgMonthlyNetBurn = currentMonthSpend - currentMonthIncome;
-  let runwayMonths = 0;
-  let cashZeroDate: Date | null = null;
-
-  if (avgMonthlyNetBurn > 0 && totalBalance > 0) {
-    runwayMonths = Math.round(totalBalance / avgMonthlyNetBurn);
-    cashZeroDate = new Date(now);
-    cashZeroDate.setMonth(cashZeroDate.getMonth() + runwayMonths);
-  }
-
-  // Upsert reports
   const currency = accounts[0]?.currency || 'GBP';
 
-  await prisma.report.upsert({
-    where: {
-      id: await getReportId(userId, ReportType.monthly_spend, currentMonth),
-    },
-    update: {
-      value: currentMonthSpend,
-      changePercentage: Math.round(spendChangePercentage * 100) / 100,
-      currency,
-    },
-    create: {
-      userId,
-      reportType: ReportType.monthly_spend,
-      period: currentMonth,
-      value: currentMonthSpend,
-      changePercentage: Math.round(spendChangePercentage * 100) / 100,
-      currency,
-    },
+  const earliestTx = await prisma.transaction.findFirst({
+    where: { account: { userId }, pending: false },
+    orderBy: { date: 'asc' },
   });
 
-  await prisma.report.upsert({
-    where: {
-      id: await getReportId(userId, ReportType.monthly_income, currentMonth),
-    },
-    update: {
-      value: currentMonthIncome,
-      changePercentage: Math.round(incomeChangePercentage * 100) / 100,
-      currency,
-    },
-    create: {
-      userId,
-      reportType: ReportType.monthly_income,
-      period: currentMonth,
-      value: currentMonthIncome,
-      changePercentage: Math.round(incomeChangePercentage * 100) / 100,
-      currency,
-    },
-  });
+  if (!earliestTx) return;
 
-  await prisma.report.upsert({
-    where: {
-      id: await getReportId(userId, ReportType.runway, currentMonth),
-    },
-    update: {
-      value: runwayMonths,
-      unit: 'months',
-      cashZeroDate,
-      currency,
-    },
-    create: {
-      userId,
-      reportType: ReportType.runway,
-      period: currentMonth,
-      value: runwayMonths,
-      unit: 'months',
-      cashZeroDate,
-      currency,
-    },
-  });
-}
+  const now = new Date();
+  const lastCompletedMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const startMonth = new Date(earliestTx.date.getFullYear(), earliestTx.date.getMonth(), 1);
 
-async function getReportId(userId: string, reportType: ReportType, period: Date): Promise<string> {
-  const existing = await prisma.report.findFirst({
-    where: { userId, reportType, period },
-  });
-  return existing?.id || 'non-existent-id-for-create';
+  if (startMonth > lastCompletedMonth) return;
+
+  const months: Date[] = [];
+  const cursor = new Date(startMonth);
+  while (cursor <= lastCompletedMonth) {
+    months.push(new Date(cursor));
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  const monthlyData: { period: Date; spend: number; income: number }[] = [];
+
+  for (const month of months) {
+    const nextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        account: { userId },
+        date: { gte: month, lt: nextMonth },
+        pending: false,
+      },
+    });
+
+    const spend = transactions
+      .filter((tx) => tx.amount > 0)
+      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    const income = transactions
+      .filter((tx) => tx.amount < 0)
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+    monthlyData.push({ period: month, spend, income });
+  }
+
+  for (let i = 0; i < monthlyData.length; i++) {
+    const { period, spend, income } = monthlyData[i];
+    const prev = i > 0 ? monthlyData[i - 1] : null;
+
+    const spendChange = prev && prev.spend > 0
+      ? Math.round(((spend - prev.spend) / prev.spend) * 100 * 100) / 100
+      : null;
+
+    const incomeChange = prev && prev.income > 0
+      ? Math.round(((income - prev.income) / prev.income) * 100 * 100) / 100
+      : null;
+
+    await prisma.report.upsert({
+      where: { userId_reportType_period: { userId, reportType: ReportType.monthly_spend, period } },
+      update: { value: spend, changePercentage: spendChange, currency },
+      create: { userId, reportType: ReportType.monthly_spend, period, value: spend, changePercentage: spendChange, currency },
+    });
+
+    await prisma.report.upsert({
+      where: { userId_reportType_period: { userId, reportType: ReportType.monthly_income, period } },
+      update: { value: income, changePercentage: incomeChange, currency },
+      create: { userId, reportType: ReportType.monthly_income, period, value: income, changePercentage: incomeChange, currency },
+    });
+
+    const avgNetBurn = monthlyData.slice(0, i + 1).reduce((sum, m) => sum + (m.spend - m.income), 0) / (i + 1);
+    let runwayMonths = 0;
+    let cashZeroDate: Date | null = null;
+
+    if (avgNetBurn > 0 && totalBalance > 0) {
+      runwayMonths = Math.round(totalBalance / avgNetBurn);
+      cashZeroDate = new Date(now);
+      cashZeroDate.setMonth(cashZeroDate.getMonth() + runwayMonths);
+    }
+
+    await prisma.report.upsert({
+      where: { userId_reportType_period: { userId, reportType: ReportType.runway, period } },
+      update: { value: runwayMonths, unit: 'months', cashZeroDate, currency: null },
+      create: { userId, reportType: ReportType.runway, period, value: runwayMonths, unit: 'months', cashZeroDate, currency: null },
+    });
+  }
 }

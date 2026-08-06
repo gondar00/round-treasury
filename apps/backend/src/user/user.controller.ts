@@ -1,11 +1,15 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TemporalService } from '../temporal/temporal.service';
 
 const DEMO_USER_ID = '550e8400-e29b-41d4-a716-446655440000';
 
 @Controller('api/user')
 export class UserController {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private temporal: TemporalService,
+  ) {}
 
   @Get('accounts')
   async getAccounts() {
@@ -44,7 +48,6 @@ export class UserController {
         },
       },
       orderBy: { date: 'desc' },
-      take: 100,
     });
   }
 
@@ -54,5 +57,14 @@ export class UserController {
       where: { userId: DEMO_USER_ID },
       orderBy: [{ reportType: 'asc' }, { period: 'desc' }],
     });
+  }
+
+  @Post('sync')
+  async triggerSync() {
+    const handle = await this.temporal.startSyncWorkflow(DEMO_USER_ID);
+    if (!handle) {
+      return { error: 'Temporal service unavailable' };
+    }
+    return { workflowId: handle.workflowId };
   }
 }

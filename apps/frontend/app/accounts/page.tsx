@@ -53,6 +53,7 @@ export default function AccountsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -72,13 +73,47 @@ export default function AccountsPage() {
     }
   };
 
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      await fetch(`${API_BASE}/api/user/sync`, { method: 'POST' });
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await fetchData();
+    } catch (error) {
+      console.error('Sync failed:', error);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleDownload = () => {
+    const headers = ['Date', 'Merchant/Name', 'Amount', 'Payment Channel', 'Bank', 'Account'];
+    const rows = transactions.map((tx) => [
+      new Date(tx.date).toISOString().split('T')[0],
+      tx.merchantName || tx.name,
+      tx.amount.toString(),
+      tx.paymentChannel || '',
+      tx.account.plaidItem.institutionName || '',
+      `${tx.account.name} ${tx.account.mask ? `(**${tx.account.mask})` : ''}`,
+    ]);
+
+    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transactions-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
 
   const totalBalance = accounts.reduce(
     (sum, acc) => sum + (acc.currentBalance || 0),
-    0
+    0,
   );
 
   if (loading) {
@@ -94,9 +129,27 @@ export default function AccountsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Accounts</h1>
-          <p className="text-muted-foreground">Add or manage your linked bank accounts</p>
+          <p className="text-muted-foreground">
+            Add or manage your linked bank accounts
+          </p>
         </div>
-        <LinkAccountButton onSuccess={fetchData} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="px-4 py-2 text-sm font-medium border border-border rounded-md hover:bg-secondary/50 disabled:opacity-50"
+          >
+            {syncing ? 'Syncing...' : 'Sync now'}
+          </button>
+          <button
+            onClick={handleDownload}
+            disabled={transactions.length === 0}
+            className="px-4 py-2 text-sm font-medium border border-border rounded-md hover:bg-secondary/50 disabled:opacity-50"
+          >
+            Download
+          </button>
+          <LinkAccountButton onSuccess={fetchData} />
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -110,7 +163,7 @@ export default function AccountsPage() {
 
       <AccountCards accounts={accounts} />
       <StatsSection reports={reports} />
-      <TransactionsTable transactions={transactions} />
+      <TransactionsTable transactions={transactions} accounts={accounts} />
     </div>
   );
 }

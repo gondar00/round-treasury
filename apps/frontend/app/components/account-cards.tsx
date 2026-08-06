@@ -33,11 +33,11 @@ export function AccountCards({ accounts }: { accounts: Account[] }) {
   }
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {accounts.map((account) => (
         <div
           key={account.id}
-          className="min-w-[240px] border border-border rounded-lg p-4 bg-card space-y-2"
+          className="border border-border rounded-lg p-4 bg-card space-y-2"
         >
           <p className="text-sm font-medium text-primary">
             {account.plaidItem.institutionName || 'Unknown Bank'}
