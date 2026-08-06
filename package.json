@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "concurrently \"temporal server start-dev\" \"nx run backend:dev\" \"nx run frontend:dev\"",
+    "dev": "concurrently --kill-others \"temporal server start-dev\" \"nx run-many -t dev -p backend,frontend\"",
     "dev:frontend": "nx run frontend:dev",
     "dev:backend": "nx run backend:dev",
-    "build": "nx run-many --target=build --projects=frontend,backend",
+    "build": "nx run-many -t build -p frontend,backend",
     "build:frontend": "nx run frontend:build",
     "build:backend": "nx run backend:build"
   },
