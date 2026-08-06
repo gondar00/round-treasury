@@ -18,6 +18,9 @@
     "target": "es2022",
     "customConditions": ["@org/source"],
     "noUncheckedSideEffectImports": false,
-    "types": ["*"]
+    "types": ["*"],
+    "paths": {
+      "@round-treasury/ui": ["libs/ui/src/index.ts"]
+    }
   }
 }

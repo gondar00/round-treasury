@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  plaidItems   PlaidItem[]
+  accounts     Account[]
+  reports      Report[]
+
+  @@map("user")
+}
+
+model PlaidItem {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  accessToken     String   @map("access_token")
+  itemId          String   @unique @map("item_id")
+  institutionId   String?  @map("institution_id")
+  institutionName String?  @map("institution_name")
+  cursor          String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user     User      @relation(fields: [userId], references: [id])
+  accounts Account[]
+
+  @@map("plaid_item")
+}
+
+model Account {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  plaidItemId      String   @map("plaid_item_id")
+  plaidAccountId   String   @unique @map("plaid_account_id")
+  name             String
+  officialName     String?  @map("official_name")
+  type             String
+  subtype          String?
+  mask             String?
+  currentBalance   Float?   @map("current_balance")
+  availableBalance Float?   @map("available_balance")
+  currency         String?
+  lastSyncedAt     DateTime? @map("last_synced_at")
+
+  user         User          @relation(fields: [userId], references: [id])
+  plaidItem    PlaidItem     @relation(fields: [plaidItemId], references: [id])
+  transactions Transaction[]
+
+  @@map("account")
+}
+
+model Transaction {
+  id                 String   @id @default(uuid())
+  accountId          String   @map("account_id")
+  plaidTransactionId String   @unique @map("plaid_transaction_id")
+  amount             Float
+  currency           String?
+  date               DateTime
+  name               String
+  merchantName       String?  @map("merchant_name")
+  category           String?
+  paymentChannel     String?  @map("payment_channel")
+  pending            Boolean  @default(false)
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@map("transaction")
+}
+
+enum ReportType {
+  monthly_spend
+  monthly_income
+  runway
+}
+
+model Report {
+  id               String     @id @default(uuid())
+  userId           String     @map("user_id")
+  reportType       ReportType @map("report_type")
+  period           DateTime   @db.Timestamptz
+  value            Float
+  changePercentage Float?     @map("change_percentage")
+  currency         String?
+  unit             String?
+  cashZeroDate     DateTime?  @map("cash_zero_date") @db.Timestamptz
+  createdAt        DateTime   @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("report")
+}
