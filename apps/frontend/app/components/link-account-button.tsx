@@ -9,15 +9,21 @@ export function LinkAccountButton({ onSuccess }: { onSuccess: () => void }) {
   const [linkToken, setLinkToken] = useState<string | null>(null);
 
   const createLinkToken = async () => {
-    const res = await fetch(`${API_BASE}/api/integrations/plaid/create-link-token`, {
-      method: 'POST',
-    });
+    const res = await fetch(
+      `${API_BASE}/api/integrations/plaid/create-link-token`,
+      {
+        method: 'POST',
+      },
+    );
     const data = await res.json();
     setLinkToken(data.link_token);
   };
 
   const onPlaidSuccess = useCallback(
-    async (publicToken: string | null, _metadata: PlaidLinkOnSuccessMetadata) => {
+    async (
+      publicToken: string | null,
+      _metadata: PlaidLinkOnSuccessMetadata,
+    ) => {
       if (!publicToken) return;
       await fetch(`${API_BASE}/api/integrations/plaid/exchange-public-token`, {
         method: 'POST',
@@ -26,7 +32,7 @@ export function LinkAccountButton({ onSuccess }: { onSuccess: () => void }) {
       });
       onSuccess();
     },
-    [onSuccess]
+    [onSuccess],
   );
 
   const { open, ready } = usePlaidLink({
