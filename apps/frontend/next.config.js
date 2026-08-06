@@ -2,8 +2,8 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Next.js options go here
-  // See: https://nextjs.org/docs/app/api-reference/config/next-config-js
+  devIndicators: false,
+  allowedDevOrigins: ['http://localhost:4200'],
 };
 
 module.exports = nextConfig;

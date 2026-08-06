@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useState } from 'react';
-import { usePlaidLink } from 'react-plaid-link';
+import { useCallback, useEffect, useState } from 'react';
+import { usePlaidLink, PlaidLinkOnSuccessMetadata } from 'react-plaid-link';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -17,7 +17,8 @@ export function LinkAccountButton({ onSuccess }: { onSuccess: () => void }) {
   };
 
   const onPlaidSuccess = useCallback(
-    async (publicToken: string) => {
+    async (publicToken: string | null, _metadata: PlaidLinkOnSuccessMetadata) => {
+      if (!publicToken) return;
       await fetch(`${API_BASE}/api/integrations/plaid/exchange-public-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -33,20 +34,15 @@ export function LinkAccountButton({ onSuccess }: { onSuccess: () => void }) {
     onSuccess: onPlaidSuccess,
   });
 
-  const handleClick = async () => {
-    if (!linkToken) {
-      await createLinkToken();
+  useEffect(() => {
+    if (linkToken && ready) {
+      open();
     }
-  };
-
-  // Open Plaid Link once we have the token
-  if (linkToken && ready) {
-    open();
-  }
+  }, [linkToken, ready, open]);
 
   return (
     <button
-      onClick={handleClick}
+      onClick={createLinkToken}
       className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
     >
       + Link bank account

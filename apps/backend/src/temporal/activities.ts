@@ -1,7 +1,9 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, ReportType } from '@prisma/client';
 import { Configuration, PlaidApi, PlaidEnvironments } from 'plaid';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 
 function createPlaidClient(): PlaidApi {
   const configuration = new Configuration({

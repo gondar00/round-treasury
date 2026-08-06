@@ -19,10 +19,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@round-treasury/ui": ["../../libs/ui/src/index.ts"]
     },
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": "../.."
   },
   "include": [
     "app/**/*.ts",
@@ -43,5 +44,10 @@
     "app/**/*.spec.ts",
     "app/**/*.test.ts",
     ".next"
+  ],
+  "references": [
+    {
+      "path": "../../libs/ui"
+    }
   ]
 }

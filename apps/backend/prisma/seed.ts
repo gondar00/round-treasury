@@ -1,6 +1,12 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
+import dotenv from 'dotenv';
+import path from 'path';
 
-const prisma = new PrismaClient();
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   await prisma.user.upsert({
@@ -11,6 +17,7 @@ async function main() {
       email: 'demo@roundtreasury.com',
     },
   });
+  console.log('Seeded demo user');
 }
 
 main()

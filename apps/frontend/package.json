@@ -3,7 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "name": "frontend"
+    "name": "frontend",
+    "targets": {
+      "dev": {
+        "options": {
+          "command": "next dev --port 4200"
+        }
+      }
+    }
   },
   "dependencies": {
     "next": "~16.1.6",

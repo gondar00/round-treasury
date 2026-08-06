@@ -20,7 +20,7 @@
     "noUncheckedSideEffectImports": false,
     "types": ["*"],
     "paths": {
-      "@round-treasury/ui": ["libs/ui/src/index.ts"]
+      "@round-treasury/ui": ["./libs/ui/src/index.ts"]
     }
   }
 }
