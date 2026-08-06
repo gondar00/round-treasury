@@ -10,6 +10,7 @@ export class TemporalService implements OnModuleInit {
     try {
       const connection = await Connection.connect({
         address: process.env.TEMPORAL_ADDRESS || 'localhost:7233',
+        connectTimeout: 3000,
       });
       this.client = new Client({ connection });
       this.logger.log('Connected to Temporal server');
