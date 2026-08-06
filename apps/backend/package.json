@@ -75,6 +75,14 @@
             "buildTarget": "backend:build:production"
           }
         }
+      },
+      "dev": {
+        "continuous": true,
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "nest start --watch",
+          "cwd": "apps/backend"
+        }
       }
     }
   },

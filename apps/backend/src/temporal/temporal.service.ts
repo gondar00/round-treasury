@@ -3,7 +3,7 @@ import { Client, Connection } from '@temporalio/client';
 
 @Injectable()
 export class TemporalService implements OnModuleInit {
-  private client: Client;
+  private client!: Client;
   private readonly logger = new Logger(TemporalService.name);
 
   async onModuleInit() {
