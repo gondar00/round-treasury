@@ -3,9 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "concurrently --kill-others \"temporal server start-dev\" \"nx run-many -t dev -p backend,frontend\"",
+    "dev": "concurrently --kill-others \"temporal server start-dev\" \"nx run-many -t dev -p backend,frontend\" \"npx tsx apps/backend/src/temporal/worker.ts\"",
     "dev:frontend": "nx run frontend:dev",
     "dev:backend": "nx run backend:dev",
+    "dev:worker": "npx tsx apps/backend/src/temporal/worker.ts",
     "build": "nx run-many -t build -p frontend,backend",
     "build:frontend": "nx run frontend:build",
     "build:backend": "nx run backend:build"
