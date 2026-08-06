@@ -1,11 +1,15 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { PlaidService } from './plaid.service';
+import { TemporalService } from '../../temporal/temporal.service';
 
 const DEMO_USER_ID = '550e8400-e29b-41d4-a716-446655440000';
 
 @Controller('api/integrations/plaid')
 export class PlaidController {
-  constructor(private plaidService: PlaidService) {}
+  constructor(
+    private plaidService: PlaidService,
+    private temporalService: TemporalService,
+  ) {}
 
   @Post('create-link-token')
   async createLinkToken() {
@@ -19,6 +23,10 @@ export class PlaidController {
       DEMO_USER_ID,
       body.public_token,
     );
+
+    // Trigger immediate sync after linking
+    await this.temporalService.startSyncWorkflow(DEMO_USER_ID);
+
     return { item_id: plaidItem.id };
   }
 }

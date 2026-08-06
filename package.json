@@ -42,6 +42,7 @@
     "@temporalio/workflow": "^1.21.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.4.2",
     "lucide-react": "^1.28.0",
     "next": "~16.1.6",
     "plaid": "^45.0.0",
@@ -49,6 +50,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-plaid-link": "^5.0.0",
+    "recharts": "^3.10.1",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0",
     "tailwind-merge": "^3.6.0"

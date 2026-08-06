@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { PlaidService } from './plaid.service';
 import { PlaidController } from './plaid.controller';
+import { TemporalModule } from '../../temporal/temporal.module';
 
 @Module({
+  imports: [TemporalModule],
   controllers: [PlaidController],
   providers: [PlaidService],
   exports: [PlaidService],
