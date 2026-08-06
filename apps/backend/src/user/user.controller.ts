@@ -61,10 +61,17 @@ export class UserController {
 
   @Post('sync')
   async triggerSync() {
-    const handle = await this.temporal.startSyncWorkflow(DEMO_USER_ID);
-    if (!handle) {
-      return { error: 'Temporal service unavailable' };
+    try {
+      const handle = await this.temporal.startSyncWorkflow(DEMO_USER_ID);
+      if (!handle) {
+        return { error: 'Temporal service unavailable' };
+      }
+      return { workflowId: handle.workflowId };
+    } catch (error: any) {
+      if (error.message?.includes('already exists') || error.message?.includes('already running')) {
+        return { error: 'Sync already in progress' };
+      }
+      throw error;
     }
-    return { workflowId: handle.workflowId };
   }
 }
