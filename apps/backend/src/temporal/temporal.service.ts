@@ -31,7 +31,7 @@ export class TemporalService implements OnModuleInit {
 
     const handle = await this.client.workflow.start('syncBankDataWorkflow', {
       taskQueue: 'bank-sync',
-      workflowId: `sync-bank-data-user-${userId}`,
+      workflowId: `sync-bank-data-user-${userId}-${Date.now()}`,
       args: [userId],
     });
     return handle;
