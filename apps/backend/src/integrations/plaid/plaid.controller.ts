@@ -24,8 +24,9 @@ export class PlaidController {
       body.public_token,
     );
 
-    // Trigger immediate sync after linking
+    // Trigger immediate sync and create hourly schedule
     await this.temporalService.startSyncWorkflow(DEMO_USER_ID);
+    await this.temporalService.createSyncSchedule(DEMO_USER_ID);
 
     return { item_id: plaidItem.id };
   }
