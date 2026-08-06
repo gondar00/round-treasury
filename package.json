@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "nx run-many --target=dev,serve --projects=frontend,backend --parallel",
+    "dev": "concurrently \"temporal server start-dev\" \"nx run backend:serve\" \"nx run frontend:dev\"",
     "dev:frontend": "nx run frontend:dev",
     "dev:backend": "nx run backend:serve",
     "build": "nx run-many --target=build --projects=frontend,backend",
@@ -30,6 +30,7 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "concurrently": "^10.0.4",
     "nx": "23.1.1",
     "prettier": "^3.8.1",
     "tslib": "^2.3.0",

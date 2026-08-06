@@ -63,30 +63,25 @@ npx prisma migrate dev --name init
 npx prisma db seed
 ```
 
-### 5. Start Temporal
+### 5. Start everything
 
 ```bash
-temporal server start-dev
+pnpm dev
+```
+
+This starts Temporal server, backend (http://localhost:3000), and frontend (http://localhost:4200) in parallel.
+
+Or run individually:
+
+```bash
+pnpm dev:backend    # NestJS on port 3000
+pnpm dev:frontend   # Next.js on port 4200
 ```
 
 ### 6. Start the Temporal worker (separate terminal)
 
 ```bash
 npx ts-node apps/backend/src/temporal/worker.ts
-```
-
-### 7. Start the backend
-
-```bash
-pnpm nx run backend:serve
-```
-
-Backend runs on http://localhost:3000
-
-### 8. Start the frontend
-
-```bash
-pnpm nx run frontend:dev
 ```
 
 Frontend runs on http://localhost:4200
