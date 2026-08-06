@@ -1,107 +1,155 @@
-# New Nx Repository
+# Round Treasury
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+Treasury dashboard that aggregates bank accounts, transactions, and financial stats for business founders and executives. Built with Plaid (Open Banking) and Temporal (workflow engine).
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
-
-[Learn more about this workspace setup and its capabilities](https://nx.dev/docs/technologies/typescript/introduction?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
-🚀 If you haven't connected to Nx Cloud yet, [complete your setup here](https://cloud.nx.app/get-started). Get faster builds with remote caching, distributed task execution, and self-healing CI. [See how your workspace can benefit](#nx-cloud).
-## Generate a library
-
-```sh
-npx nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
-```
-
-## Run tasks
-
-To build the library use:
-
-```sh
-npx nx run pkg1:build
-```
-
-To run any task with Nx use:
-
-```sh
-npx nx run <project-name>:<target>
-```
-
-These targets are either [inferred automatically](https://nx.dev/docs/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
-
-[More about running tasks in the docs &raquo;](https://nx.dev/docs/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Versioning and releasing
-
-To version and release the library use
+## Architecture
 
 ```
-npx nx release
+apps/
+  frontend/    → Next.js 16 (App Router) — dashboard UI
+  backend/     → NestJS — REST API + Plaid integration
+libs/
+  ui/          → Shared component library (Tailwind + shadcn/ui)
 ```
 
-Pass `--dry-run` to see what would happen without actually releasing the library.
+**Key technologies:** Nx monorepo, PostgreSQL, Prisma, Temporal, Plaid SDK, Recharts
 
-[Learn more about Nx release &raquo;](https://nx.dev/docs/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## Prerequisites
 
-## Keep TypeScript project references up to date
+- Node.js 20+
+- pnpm 9+
+- PostgreSQL (local)
+- Temporal CLI (`brew install temporal`)
+- Plaid developer account (free sandbox)
 
-Nx automatically updates TypeScript [project references](https://www.typescriptlang.org/docs/handbook/project-references.html) in `tsconfig.json` files to ensure they remain accurate based on your project dependencies (`import` or `require` statements). This sync is automatically done when running tasks such as `build` or `typecheck`, which require updated references to function correctly.
+## Setup
 
-To manually trigger the process to sync the project graph dependencies information to the TypeScript project references, run the following command:
+### 1. Install dependencies
 
-```sh
-npx nx sync
+```bash
+pnpm install
 ```
 
-You can enforce that the TypeScript project references are always in the correct state when running in CI by adding a step to your CI job configuration that runs the following command:
+### 2. PostgreSQL
 
-```sh
-npx nx sync:check
+Create a database:
+
+```bash
+createdb round_treasury
 ```
 
-[Learn more about nx sync](https://nx.dev/reference/nx-commands#sync)
+### 3. Environment variables
 
-## Nx Cloud
-
-Nx Cloud ensures a [fast and scalable CI](https://nx.dev/nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/docs/features/ci-features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/docs/features/ci-features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/docs/features/ci-features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/docs/features/ci-features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Set up CI (non-Github Actions CI)
-
-**Note:** This is only required if your CI provider is not GitHub Actions.
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
+```bash
+cp apps/backend/.env.example apps/backend/.env
 ```
 
-[Learn more about Nx on CI](https://nx.dev/docs/features/ci-features?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Edit `apps/backend/.env` with your values:
 
-## Install Nx Console
+```
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/round_treasury?schema=public"
+PLAID_CLIENT_ID=<your plaid client id>
+PLAID_SECRET=<your plaid sandbox secret>
+TEMPORAL_ADDRESS=localhost:7233
+```
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+Get Plaid credentials from https://dashboard.plaid.com/developers/keys
 
-[Install Nx Console &raquo;](https://nx.dev/docs/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### 4. Database migration
 
-## 🔗 Learn More
+```bash
+cd apps/backend
+npx prisma migrate dev --name init
+npx prisma db seed
+```
 
-- [Nx Documentation](https://nx.dev/docs)
-- [Crafting Your Workspace Tutorial](https://nx.dev/docs/getting-started/tutorials/crafting-your-workspace)
-- [Module Boundaries](https://nx.dev/docs/features/enforce-module-boundaries)
-- [Releasing Packages](https://nx.dev/docs/features/manage-releases)
-- [Nx Plugins](https://nx.dev/docs/concepts/nx-plugins)
-- [Nx Cloud](https://nx.dev/nx-cloud)
+### 5. Start Temporal
 
-## 💬 Community
+```bash
+temporal server start-dev
+```
 
-Join the Nx community:
+### 6. Start the Temporal worker (separate terminal)
 
-- [Discord](https://go.nx.dev/community)
-- [X (Twitter)](https://twitter.com/nxdevtools)
-- [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [YouTube](https://www.youtube.com/@nxdevtools)
-- [Blog](https://nx.dev/blog)
+```bash
+npx ts-node apps/backend/src/temporal/worker.ts
+```
+
+### 7. Start the backend
+
+```bash
+pnpm nx run backend:serve
+```
+
+Backend runs on http://localhost:3000
+
+### 8. Start the frontend
+
+```bash
+pnpm nx run frontend:dev
+```
+
+Frontend runs on http://localhost:4200
+
+## Usage
+
+1. Open http://localhost:4200 — you'll see the Accounts dashboard
+2. Click "+ Link bank account"
+3. In the Plaid sandbox dialog, use credentials: `user_good` / `pass_good`
+4. Select any bank and accounts
+5. After linking, the Temporal workflow triggers and syncs accounts + transactions
+6. Dashboard populates with balances, stats, and transaction history
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/integrations/plaid/create-link-token` | Create Plaid Link token |
+| POST | `/api/integrations/plaid/exchange-public-token` | Exchange public token, trigger sync |
+| GET | `/api/user/accounts` | List all linked accounts |
+| GET | `/api/user/transactions?account_id=&from=&to=` | List transactions (with filters) |
+| GET | `/api/user/reports` | Get computed financial reports |
+
+## Temporal Workflow
+
+**`syncBankDataWorkflow`** runs three activities in sequence:
+
+1. `syncUserAccounts` — fetches account balances from Plaid, upserts to DB
+2. `syncUserTransactions` — uses `/transactions/sync` (cursor-based) for incremental sync
+3. `generateUserReports` — computes runway, monthly spend, monthly income
+
+**Triggers:**
+- Immediately after a bank account is linked
+- On a 1-hour Temporal schedule
+
+## Assumptions & Shortcuts
+
+- **No authentication** — single hardcoded demo user (as per spec)
+- **Currency hardcoded to GBP** — matches the mockup; a real implementation would handle multi-currency
+- **Runway formula** — `total_balance / avg_monthly_net_burn` (simple division, no linear regression)
+- **No pagination** on transaction list — limited to 100 most recent
+- **No WebSocket/SSE** for real-time updates after sync completes — requires page refresh
+- **Plaid sandbox data is static** — the same test data appears regardless of sync frequency
+
+## What would be different in production
+
+- **Authentication & multi-tenancy** — JWT/session-based auth, user-scoped data isolation
+- **Plaid webhooks** — listen for `TRANSACTIONS_SYNC_AVAILABLE` instead of polling on a timer
+- **Proper error handling** — retry logic in activities, dead letter queues, alerting
+- **Multi-currency support** — exchange rates, per-account currency display
+- **Pagination & infinite scroll** on transactions
+- **Real-time updates** — WebSocket push after workflow completes
+- **Encrypted secrets** — Plaid access tokens encrypted at rest
+- **Audit logging** — track all sync operations and data changes
+- **Rate limiting** — respect Plaid's per-item limits (30/hour for balance)
+- **Idempotent workflow execution** — handle Temporal retries gracefully
+- **Database indexes** — on `user_id`, `account_id`, `date` for query performance
+- **Monitoring** — Temporal workflow dashboards, error rates, sync latency metrics
+
+## Security Considerations
+
+- Plaid `access_token` stored in plaintext — should be encrypted (AES-256) in production
+- No CSRF protection on POST endpoints
+- No rate limiting on API — vulnerable to abuse
+- Demo user ID is predictable — no authorization checks
+- `.env` contains secrets — must never be committed (it's in `.gitignore`)
