@@ -1,23 +1,13 @@
 import { Controller, Get, Post, Query } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { TemporalService } from '../temporal/temporal.service';
-
-const DEMO_USER_ID = '550e8400-e29b-41d4-a716-446655440000';
+import { UserService } from './user.service';
 
 @Controller('api/user')
 export class UserController {
-  constructor(
-    private prisma: PrismaService,
-    private temporal: TemporalService,
-  ) {}
+  constructor(private userService: UserService) {}
 
   @Get('accounts')
   async getAccounts() {
-    return this.prisma.account.findMany({
-      where: { userId: DEMO_USER_ID },
-      include: { plaidItem: { select: { institutionName: true } } },
-      orderBy: { lastSyncedAt: 'desc' },
-    });
+    return this.userService.getAccounts();
   }
 
   @Get('transactions')
@@ -26,47 +16,18 @@ export class UserController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    const where: any = {
-      account: { userId: DEMO_USER_ID },
-    };
-
-    if (accountId) {
-      where.accountId = accountId;
-    }
-
-    if (from || to) {
-      where.date = {};
-      if (from) where.date.gte = new Date(from);
-      if (to) where.date.lte = new Date(to);
-    }
-
-    return this.prisma.transaction.findMany({
-      where,
-      include: {
-        account: {
-          select: { name: true, mask: true, plaidItem: { select: { institutionName: true } } },
-        },
-      },
-      orderBy: { date: 'desc' },
-    });
+    return this.userService.getTransactions({ accountId, from, to });
   }
 
   @Get('reports')
   async getReports() {
-    return this.prisma.report.findMany({
-      where: { userId: DEMO_USER_ID },
-      orderBy: [{ reportType: 'asc' }, { period: 'desc' }],
-    });
+    return this.userService.getReports();
   }
 
   @Post('sync')
   async triggerSync() {
     try {
-      const handle = await this.temporal.startSyncWorkflow(DEMO_USER_ID);
-      if (!handle) {
-        return { error: 'Temporal service unavailable' };
-      }
-      return { workflowId: handle.workflowId };
+      return await this.userService.triggerSync();
     } catch (error: any) {
       if (error.message?.includes('already exists') || error.message?.includes('already running')) {
         return { error: 'Sync already in progress' };
