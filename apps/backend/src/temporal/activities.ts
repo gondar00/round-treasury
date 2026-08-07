@@ -1,6 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, ReportType } from '@prisma/client';
 import { Configuration, PlaidApi, PlaidEnvironments } from 'plaid';
+import { startOfMonth, subMonths, addMonths, isBefore, isEqual } from 'date-fns';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -161,22 +162,22 @@ export async function generateUserReports(userId: string): Promise<void> {
   if (!earliestTx) return;
 
   const now = new Date();
-  const lastCompletedMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const startMonth = new Date(earliestTx.date.getFullYear(), earliestTx.date.getMonth(), 1);
+  const lastCompletedMonth = startOfMonth(subMonths(now, 1));
+  const firstMonth = startOfMonth(earliestTx.date);
 
-  if (startMonth > lastCompletedMonth) return;
+  if (isBefore(lastCompletedMonth, firstMonth)) return;
 
   const months: Date[] = [];
-  const cursor = new Date(startMonth);
-  while (cursor <= lastCompletedMonth) {
-    months.push(new Date(cursor));
-    cursor.setMonth(cursor.getMonth() + 1);
+  let cursor = firstMonth;
+  while (isBefore(cursor, lastCompletedMonth) || isEqual(cursor, lastCompletedMonth)) {
+    months.push(cursor);
+    cursor = addMonths(cursor, 1);
   }
 
   const monthlyData: { period: Date; spend: number; income: number }[] = [];
 
   for (const month of months) {
-    const nextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+    const nextMonth = addMonths(month, 1);
     const transactions = await prisma.transaction.findMany({
       where: {
         account: { userId },
@@ -226,8 +227,7 @@ export async function generateUserReports(userId: string): Promise<void> {
 
     if (avgNetBurn > 0 && totalBalance > 0) {
       runwayMonths = Math.round(totalBalance / avgNetBurn);
-      cashZeroDate = new Date(now);
-      cashZeroDate.setMonth(cashZeroDate.getMonth() + runwayMonths);
+      cashZeroDate = addMonths(now, runwayMonths);
     }
 
     await prisma.report.upsert({
